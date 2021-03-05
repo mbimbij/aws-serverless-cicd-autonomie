@@ -1,0 +1,6 @@
+Resources:
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryDescription: repo pour my-app-autonome
+      RepositoryName: my-app-autonome
