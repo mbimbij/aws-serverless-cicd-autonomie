@@ -15,6 +15,7 @@ Resources:
       Artifacts:
         Type: S3
         Location: joseph-codedeploy
+        Packaging: ZIP
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL

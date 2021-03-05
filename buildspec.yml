@@ -4,6 +4,5 @@ phases:
     commands:
       - echo hello world
 artifacts:
-  type: zip
   files:
     - '**/*'
