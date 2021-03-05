@@ -1,33 +1,121 @@
+Parameters:
+  ApplicationName:
+    Default: ''
+    Type: String
+    Description: S3 bucket name
+  SourceCodeBucketName:
+    Default: 'joseph-codedeploy'
+    Type: String
+    Description: CodeCommit init source bucket
+  SourceCodeBucketKey:
+    Default: 'my-app-autonome-starter.zip'
+    Type: String
+    Description: CodeCommit init source item key
+
 Resources:
+  S3Bucket:
+    DeletionPolicy: Delete
+    Type: 'AWS::S3::Bucket'
+    Description: Creating Amazon S3 bucket for AWS CodePipeline artifacts
+    Properties:
+      BucketName: !Join
+        - '-'
+        - - aws
+          - !Ref 'AWS::Region'
+          - !Ref 'AWS::AccountId'
+          - !Ref ApplicationName
+#          - pipe
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Value: !Join
+            - '-'
+            - - !Ref ApplicationName
+              - S3Bucket
+          Key: Name
 
   CodeCommitRepository:
     Type: AWS::CodeCommit::Repository
     Properties:
       RepositoryDescription: repo pour my-app-autonome
       RepositoryName: my-app-autonome
+      Code:
+        S3:
+          Bucket: !Ref SourceCodeBucketName
+          Key: !Ref SourceCodeBucketKey
+        BranchName: main
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: my-app-autonome
       Description: A build project for my-app-autonome
-      ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
+#      ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
+      ServiceRole: !Ref PipelineRole
       Artifacts:
         Type: S3
-        Location: joseph-codedeploy
+        Location: !Ref S3Bucket
         Packaging: ZIP
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
-#        Image: aws/codebuild/java:openjdk-11
-#        Image: aws/codebuild/standard:5.0
         Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
         EnvironmentVariables:
           - Name: S3_BUCKET
             Type: PLAINTEXT
-            Value: joseph-codedeploy
+            Value: !Ref S3Bucket
       Source:
         Location: https://git-codecommit.eu-west-3.amazonaws.com/v1/repos/my-app-autonome
         Type: CODECOMMIT
       TimeoutInMinutes: 5
 
+  PipelineRole:
+    Type: 'AWS::IAM::Role'
+    Description: IAM role in for pipeline resources
+    Properties:
+#      RoleName: !Sub '${AppId}-${AWS::Region}-pipeline'
+      RoleName: my-app-autonome-pipeline-role
+      Path: /
+      Policies:
+        - PolicyName: my-app-autonome-pipeline-policy
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - '*'
+                Resource:
+#                  - !Sub >-
+#                    arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${AppId}-Pipeline
+                  - !Sub >-
+                    arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/my-app-autonome
+                  - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/*'
+                Effect: Allow
+              - Action:
+                  - 'cloudtrail:CreateTrail'
+                  - 'cloudtrail:StartLogging'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'kms:GenerateDataKey*'
+                  - 'kms:Encrypt'
+                  - 'kms:Decrypt'
+                Resource: '*'
+                Effect: Allow
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+                - codedeploy.amazonaws.com
+                - codepipeline.amazonaws.com
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeCommitReadOnly
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
