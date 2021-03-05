@@ -13,7 +13,7 @@ Resources:
       Description: A build project for my-app-autonome
       ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
       Artifacts:
-        Type: no_artifacts
+        Type: S3
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
