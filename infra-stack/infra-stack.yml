@@ -14,6 +14,7 @@ Resources:
       ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
       Artifacts:
         Type: S3
+        Location: joseph-codedeploy
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
