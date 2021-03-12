@@ -171,6 +171,10 @@ Resources:
                 - 'codestar-connections:UseConnection'
                 Resource: '*'
                 Effect: Allow
+              - Action:
+                - 'codebuild:StartBuild'
+                Resource: '*'
+                Effect: Allow
       AssumeRolePolicyDocument:
         Statement:
           - Action: 'sts:AssumeRole'
