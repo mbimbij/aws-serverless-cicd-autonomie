@@ -124,6 +124,26 @@ Resources:
               Configuration:
                 ProjectName:
                   Ref: CodeBuildProject
+        - Name: Staging
+          Actions:
+            - Name: DeployStaging
+              InputArtifacts:
+                - Name: BuildOutput
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt
+                  - PipelineRole
+                  - Arn
+                Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
+                StackName: !Join
+                  - '-'
+                  - - !Ref ApplicationName
+                    - 'stack'
 
   PipelineRole:
     Type: 'AWS::IAM::Role'
@@ -147,6 +167,8 @@ Resources:
                 Resource:
 #                  - !Sub >-
 #                    arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${AppId}-Pipeline
+                  - !Sub >-
+                    arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/my-app-autonome/*
                   - !Sub >-
                     arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/my-app-autonome
                   - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}'
@@ -175,6 +197,13 @@ Resources:
                 - 'codebuild:StartBuild'
                 Resource: '*'
                 Effect: Allow
+              - Action:
+                - 'iam:PassRole'
+                Resource:
+                - !GetAtt
+                  - CloudFormationRole
+                  - Arn
+                Effect: Allow
       AssumeRolePolicyDocument:
         Statement:
           - Action: 'sts:AssumeRole'
@@ -185,10 +214,29 @@ Resources:
                 - codedeploy.amazonaws.com
                 - codepipeline.amazonaws.com
                 - lambda.amazonaws.com
-                - cloudformation.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodeCommitReadOnly
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/IAMFullAccess
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
         - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+
+  CloudFormationRole:
+    Type: 'AWS::IAM::Role'
+    Description: IAM role in for cloudformation deploy resource
+    Properties:
+      #      RoleName: !Sub '${AppId}-${AWS::Region}-pipeline'
+      RoleName: !Join
+        - '-'
+        - - !Ref ApplicationName
+          - cloudformation-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
