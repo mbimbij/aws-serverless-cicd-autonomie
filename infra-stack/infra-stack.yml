@@ -11,6 +11,10 @@ Parameters:
     Default: 'my-app-autonome-starter.zip'
     Type: String
     Description: CodeCommit init source item key
+  GithubRepo:
+    Default: 'mbimbij/aws-serverless-cicd-autonomie'
+    Type: String
+    Description: Github source code repository
 
 Resources:
   S3Bucket:
@@ -34,27 +38,29 @@ Resources:
               - S3Bucket
           Key: Name
 
-  CodeCommitRepository:
-    Type: AWS::CodeCommit::Repository
-    Properties:
-      RepositoryDescription: repo pour my-app-autonome
-      RepositoryName: my-app-autonome
-      Code:
-        S3:
-          Bucket: !Ref SourceCodeBucketName
-          Key: !Ref SourceCodeBucketKey
-        BranchName: main
+#  CodeCommitRepository:
+#    Type: AWS::CodeCommit::Repository
+#    Properties:
+#      RepositoryDescription: repo pour my-app-autonome
+#      RepositoryName: my-app-autonome
+#      Code:
+#        S3:
+#          Bucket: !Ref SourceCodeBucketName
+#          Key: !Ref SourceCodeBucketKey
+#        BranchName: main
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: my-app-autonome
+      Name: !Join
+        - '-'
+        - - !Ref ApplicationName
+          - build-project
       Description: A build project for my-app-autonome
 #      ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
       ServiceRole: !Ref PipelineRole
       Artifacts:
-        Type: S3
-        Location: !Ref S3Bucket
+        Type: CODEPIPELINE
         Packaging: ZIP
       Environment:
         Type: LINUX_CONTAINER
@@ -65,19 +71,75 @@ Resources:
             Type: PLAINTEXT
             Value: !Ref S3Bucket
       Source:
-        Location: https://git-codecommit.eu-west-3.amazonaws.com/v1/repos/my-app-autonome
-        Type: CODECOMMIT
+        Type: CODEPIPELINE
       TimeoutInMinutes: 5
+
+  GithubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties:
+      ConnectionName: !Join
+        - '-'
+        - - !Ref ApplicationName
+          - github-connection
+      ProviderType: GitHub
+
+  CodePipelineResource:
+    Description: Creating a deployment pipeline for your project in AWS CodePipeline
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      RoleArn: !GetAtt
+        - PipelineRole
+        - Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3Bucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeStarSourceConnection
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ConnectionArn: !Ref GithubConnection
+                FullRepositoryId: !Ref GithubRepo
+                BranchName: "main"
+                OutputArtifactFormat: "CODE_ZIP"
+        - Name: Build
+          Actions:
+            - Name: Build
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName:
+                  Ref: CodeBuildProject
 
   PipelineRole:
     Type: 'AWS::IAM::Role'
     Description: IAM role in for pipeline resources
     Properties:
 #      RoleName: !Sub '${AppId}-${AWS::Region}-pipeline'
-      RoleName: my-app-autonome-pipeline-role
+      RoleName: !Join
+        - '-'
+        - - !Ref ApplicationName
+          - role
       Path: /
       Policies:
-        - PolicyName: my-app-autonome-pipeline-policy
+        - PolicyName: !Join
+            - '-'
+            - - !Ref ApplicationName
+              - policy
           PolicyDocument:
             Statement:
               - Action:
@@ -103,6 +165,10 @@ Resources:
                   - 'kms:GenerateDataKey*'
                   - 'kms:Encrypt'
                   - 'kms:Decrypt'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                - 'codestar-connections:UseConnection'
                 Resource: '*'
                 Effect: Allow
       AssumeRolePolicyDocument:
