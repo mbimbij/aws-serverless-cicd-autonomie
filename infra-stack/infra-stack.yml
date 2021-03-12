@@ -80,7 +80,7 @@ Resources:
       ConnectionName: !Join
         - '-'
         - - !Ref ApplicationName
-          - github-connection
+          - connection
       ProviderType: GitHub
 
   CodePipelineResource:
@@ -137,10 +137,10 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt
-                  - PipelineRole
+                  - CloudFormationRole
                   - Arn
                 Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
-                TemplatePath: !Sub '${ApplicationName}-BuildOutput::out-sam-template.yml'
+                TemplatePath: !Sub 'BuildOutput::out-sam-template.yml'
                 StackName: !Join
                   - '-'
                   - - !Ref ApplicationName
@@ -241,3 +241,6 @@ Resources:
                 - cloudformation.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
+        - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
