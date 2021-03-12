@@ -185,6 +185,7 @@ Resources:
                 - codedeploy.amazonaws.com
                 - codepipeline.amazonaws.com
                 - lambda.amazonaws.com
+                - cloudformation.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodeCommitReadOnly
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
