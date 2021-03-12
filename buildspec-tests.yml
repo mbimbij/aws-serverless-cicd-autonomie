@@ -1,0 +1,6 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - aws lambda invoke --function-name my-app-autonome lambda-out.log
+      - cat lambda-out.log
