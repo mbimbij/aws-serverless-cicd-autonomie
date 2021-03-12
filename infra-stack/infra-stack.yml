@@ -140,6 +140,7 @@ Resources:
                   - PipelineRole
                   - Arn
                 Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
+                TemplatePath: !Sub '${ApplicationName}-BuildOutput::out-sam-template.yml'
                 StackName: !Join
                   - '-'
                   - - !Ref ApplicationName
