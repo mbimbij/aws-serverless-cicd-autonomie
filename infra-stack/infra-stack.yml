@@ -190,3 +190,4 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/IAMFullAccess
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
