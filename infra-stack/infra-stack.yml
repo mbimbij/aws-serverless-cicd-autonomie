@@ -74,6 +74,31 @@ Resources:
         Type: CODEPIPELINE
       TimeoutInMinutes: 5
 
+  AcceptanceTestsCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref ApplicationName
+          - acceptance-tests-project
+      Description: A build project for automated acceptance tests
+      #      ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
+      ServiceRole: !Ref PipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+        Packaging: ZIP
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        EnvironmentVariables:
+          - Name: LAMBDA_FUNCTION_NAME
+            Type: PLAINTEXT
+            Value: my-app-autonome
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 5
+
   GithubConnection:
     Type: AWS::CodeStarConnections::Connection
     Properties:
@@ -124,9 +149,10 @@ Resources:
               Configuration:
                 ProjectName:
                   Ref: CodeBuildProject
-        - Name: Staging
+        - Name: Deploy
           Actions:
-            - Name: DeployStaging
+            - Name: Deploy
+              RunOrder: 1
               InputArtifacts:
                 - Name: BuildOutput
               ActionTypeId:
@@ -145,6 +171,18 @@ Resources:
                   - '-'
                   - - !Ref ApplicationName
                     - 'stack'
+#            - Name: AcceptanceTests
+#              RunOrder: 2
+#              InputArtifacts:
+#                  - Name: SourceOutput
+#              ActionTypeId:
+#                Category: Test
+#                Owner: AWS
+#                Version: 1
+#                Provider: CodeBuild
+#              Configuration:
+#                ProjectName:
+#                  Ref: AcceptanceTestsCodeBuildProject
 
   PipelineRole:
     Type: 'AWS::IAM::Role'
