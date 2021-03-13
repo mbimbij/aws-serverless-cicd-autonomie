@@ -14,7 +14,7 @@ class SanityCheckIT {
   private final Region region = Region.EU_WEST_3;
 
   @Test
-  void statusCodeIs200_andBodyHasCorrectVersion() {
+  void bodyHasCorrectVersion() {
     // given
     HelloResponse expectedResponse = new HelloResponse(HelloHandler.RESPONSE);
 
