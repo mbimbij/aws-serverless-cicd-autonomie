@@ -22,3 +22,7 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: Canary10Percent5Minutes
+        Hooks:
+#           Validation Lambda functions that are run before & after traffic shifting
+          PreTraffic: arn:aws:lambda:eu-west-3:870103585828:function:CodeDeployHook_prehook
+          PostTraffic: arn:aws:lambda:eu-west-3:870103585828:function:CodeDeployHook_posthook

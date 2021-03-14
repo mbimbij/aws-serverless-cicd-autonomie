@@ -277,6 +277,8 @@ Resources:
             Principal:
               Service:
                 - cloudformation.amazonaws.com
+                - codedeploy.amazonaws.com
+                - lambda.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/IAMFullAccess
