@@ -4,7 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example</groupId>
     <artifactId>my-app-autonome</artifactId>
+    <packaging>pom</packaging>
     <version>0.0.1-SNAPSHOT</version>
+    <modules>
+        <module>integration-tests</module>
+        <module>main-function</module>
+    </modules>
     <name>my-app-autonome</name>
     <description>Self training project for AWS Lambda ci/cd</description>
 
@@ -37,6 +42,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
