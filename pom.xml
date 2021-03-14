@@ -42,8 +42,17 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.symphonia</groupId>
+            <artifactId>lambda-logging</artifactId>
+            <version>1.0.3</version>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>lambda</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>codedeploy</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -63,8 +72,8 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-lambda-java-events</artifactId>
             <version>${aws-lambda-java-events.version}</version>
+            <artifactId>aws-lambda-java-events</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

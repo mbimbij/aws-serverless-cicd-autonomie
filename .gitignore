@@ -1,4 +1,4 @@
 .idea
 out-sam-template.yml
 target/
-
+**/Main.java

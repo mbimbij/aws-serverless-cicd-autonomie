@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class HelloHandler implements RequestHandler<Object,HelloResponse> {
 
-  public final static String RESPONSE = "hello from my-app-autonome - v10";
+  public final static String RESPONSE = "hello from my-app-autonome - v14";
 
   @Override
   public HelloResponse handleRequest(Object helloRequest, Context context) {

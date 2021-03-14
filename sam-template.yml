@@ -21,8 +21,37 @@ Resources:
       Tracing: Active
       AutoPublishAlias: live
       DeploymentPreference:
-        Type: Canary10Percent5Minutes
+#        Type: Canary10Percent5Minutes
+        Type: AllAtOnce
         Hooks:
 #           Validation Lambda functions that are run before & after traffic shifting
-          PreTraffic: arn:aws:lambda:eu-west-3:870103585828:function:CodeDeployHook_prehook
-          PostTraffic: arn:aws:lambda:eu-west-3:870103585828:function:CodeDeployHook_posthook
+          PreTraffic: !Ref PreTrafficHook
+#          PostTraffic: arn:aws:lambda:eu-west-3:870103585828:function:CodeDeployHook_posthook
+
+  PreTrafficHook:
+    Type: AWS::Serverless::Function
+    Properties:
+      DeploymentPreference:
+        Enabled: False
+      CodeUri: target/my-app-autonome-0.0.1-SNAPSHOT.jar
+      Handler: hooks.PreTrafficHook
+      Runtime: java11
+      Description: Java function
+      FunctionName: CodeDeployHook_prehook
+      MemorySize: 512
+      Environment:
+        Variables:
+          NewLambdaVersion: !Ref hellojava.Version
+      Timeout: 10
+      # Function's execution role
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaReadOnlyAccess
+        - AdministratorAccess
+        - AWSLambdaFullAccess
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "codedeploy:PutLifecycleEventHookExecutionStatus"
+              Resource: "*"
