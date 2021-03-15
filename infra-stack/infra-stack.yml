@@ -38,17 +38,6 @@ Resources:
               - S3Bucket
           Key: Name
 
-#  CodeCommitRepository:
-#    Type: AWS::CodeCommit::Repository
-#    Properties:
-#      RepositoryDescription: repo pour my-app-autonome
-#      RepositoryName: my-app-autonome
-#      Code:
-#        S3:
-#          Bucket: !Ref SourceCodeBucketName
-#          Key: !Ref SourceCodeBucketKey
-#        BranchName: main
-
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -73,31 +62,9 @@ Resources:
       Source:
         Type: CODEPIPELINE
       TimeoutInMinutes: 5
-
-  AcceptanceTestsCodeBuildProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: !Join
-        - '-'
-        - - !Ref ApplicationName
-          - acceptance-tests-project
-      Description: A build project for automated acceptance tests
-      #      ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
-      ServiceRole: !Ref PipelineRole
-      Artifacts:
-        Type: CODEPIPELINE
-        Packaging: ZIP
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-        EnvironmentVariables:
-          - Name: LAMBDA_FUNCTION_NAME
-            Type: PLAINTEXT
-            Value: my-app-autonome
-      Source:
-        Type: CODEPIPELINE
-      TimeoutInMinutes: 5
+      Cache:
+        Type: S3
+        Location: maven-cache
 
   GithubConnection:
     Type: AWS::CodeStarConnections::Connection
@@ -171,18 +138,6 @@ Resources:
                   - '-'
                   - - !Ref ApplicationName
                     - 'stack'
-#            - Name: AcceptanceTests
-#              RunOrder: 2
-#              InputArtifacts:
-#                  - Name: SourceOutput
-#              ActionTypeId:
-#                Category: Test
-#                Owner: AWS
-#                Version: 1
-#                Provider: CodeBuild
-#              Configuration:
-#                ProjectName:
-#                  Ref: AcceptanceTestsCodeBuildProject
 
   PipelineRole:
     Type: 'AWS::IAM::Role'

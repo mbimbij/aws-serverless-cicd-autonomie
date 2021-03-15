@@ -38,16 +38,19 @@ public class PreTrafficHook implements RequestHandler<Map<String, String>, Void>
 
     TestExecutionSummary summary = launchTests();
     printExecutionSummary(summary);
-
-    LifecycleEventStatus lifecycleEventStatus = computeDeployStatus(summary);
-    String lifecycleEventHookExecutionId = request.get("LifecycleEventHookExecutionId");
-    String deploymentId = request.get("DeploymentId");
-    notifyCodeDeployWithTestsStatus(lifecycleEventStatus, lifecycleEventHookExecutionId, deploymentId);
+    notifyCodeDeployWithTestsStatus(request, summary);
 
     return null;
   }
 
-  private void notifyCodeDeployWithTestsStatus(LifecycleEventStatus lifecycleEventStatus, String lifecycleEventHookExecutionId, String deploymentId) {
+  private void notifyCodeDeployWithTestsStatus(Map<String, String> request, TestExecutionSummary summary) {
+    LifecycleEventStatus lifecycleEventStatus = computeDeployStatus(summary);
+    String lifecycleEventHookExecutionId = request.get("LifecycleEventHookExecutionId");
+    String deploymentId = request.get("DeploymentId");
+    doNotifyCodeDeployWithTestsStatus(lifecycleEventStatus, lifecycleEventHookExecutionId, deploymentId);
+  }
+
+  private void doNotifyCodeDeployWithTestsStatus(LifecycleEventStatus lifecycleEventStatus, String lifecycleEventHookExecutionId, String deploymentId) {
     try (CodeDeployClient codeDeployClient = CodeDeployClient.builder().region(Region.EU_WEST_3).build()) {
       PutLifecycleEventHookExecutionStatusRequest statusRequest = PutLifecycleEventHookExecutionStatusRequest.builder()
           .deploymentId(deploymentId)

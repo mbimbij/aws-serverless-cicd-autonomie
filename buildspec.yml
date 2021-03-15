@@ -1,4 +1,5 @@
 version: 0.2
+
 phases:
   build:
     commands:
@@ -7,6 +8,11 @@ phases:
 #  post_build:
 #    commands:
 #      - sam deploy --template-file out-sam-template.yml --stack-name my-app-autonome-stack --capabilities CAPABILITY_IAM
+
 artifacts:
   files:
     - out-sam-template.yml
+
+cache:
+  paths:
+    - '/root/.m2/**/*'
