@@ -64,7 +64,7 @@ Resources:
       TimeoutInMinutes: 5
       Cache:
         Type: S3
-        Location: maven-cache
+        Location: !Sub '${S3Bucket}/maven-cache'
 
   GithubConnection:
     Type: AWS::CodeStarConnections::Connection
