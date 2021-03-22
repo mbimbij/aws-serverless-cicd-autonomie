@@ -3,14 +3,6 @@ Parameters:
     Default: ''
     Type: String
     Description: Application Name
-  SourceCodeBucketName:
-    Default: 'joseph-codedeploy'
-    Type: String
-    Description: CodeCommit init source bucket
-  SourceCodeBucketKey:
-    Default: 'my-app-autonome-starter.zip'
-    Type: String
-    Description: CodeCommit init source item key
   GithubRepo:
     Default: 'mbimbij/aws-serverless-cicd-autonomie'
     Type: String
