@@ -2,7 +2,7 @@ Parameters:
   ApplicationName:
     Default: ''
     Type: String
-    Description: S3 bucket name
+    Description: Application Name
   SourceCodeBucketName:
     Default: 'joseph-codedeploy'
     Type: String

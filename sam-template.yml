@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: AWS lambda for auto-formation purpose.
 Resources:
-  hellojava:
+  MainFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: main-function/target/main-function-0.0.1-SNAPSHOT.jar
@@ -40,7 +40,7 @@ Resources:
       MemorySize: 1024
       Environment:
         Variables:
-          NewLambdaVersion: !Ref hellojava.Version
+          NewLambdaVersion: !Ref MainFunction.Version
       Timeout: 30
       # Function's execution role
       Policies:
