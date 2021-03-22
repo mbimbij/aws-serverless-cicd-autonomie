@@ -149,7 +149,7 @@ Resources:
                 StackName: !Join
                   - '-'
                   - - !Ref ApplicationName
-                    - 'stack'
+                    - 'sam-application-stack'
 
   BuildProjectRole:
     Type: 'AWS::IAM::Role'

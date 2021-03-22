@@ -21,10 +21,10 @@ Resources:
       Tracing: Active
       AutoPublishAlias: live
       DeploymentPreference:
-#        Type: Canary10Percent5Minutes
-        Type: AllAtOnce
+        Type: Canary10Percent5Minutes
+#        Type: AllAtOnce
         Hooks:
-#           Validation Lambda functions that are run before & after traffic shifting
+#           Validation Lambda functions that are run before traffic shifting
           PreTraffic: !Ref PreTrafficHook
 
   PreTrafficHook:
