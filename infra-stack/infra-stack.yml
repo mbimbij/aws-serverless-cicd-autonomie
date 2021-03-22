@@ -38,7 +38,7 @@ Resources:
               - S3Bucket
           Key: Name
 
-  CodeBuildProject:
+  BuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Join
@@ -47,7 +47,7 @@ Resources:
           - build-project
       Description: A build project for my-app-autonome
 #      ServiceRole: arn:aws:iam::870103585828:role/codebuild-my-build-project-role
-      ServiceRole: !Ref PipelineRole
+      ServiceRole: !Ref BuildProjectRole
       Artifacts:
         Type: CODEPIPELINE
         Packaging: ZIP
@@ -75,7 +75,7 @@ Resources:
           - connection
       ProviderType: GitHub
 
-  CodePipelineResource:
+  Pipeline:
     Description: Creating a deployment pipeline for your project in AWS CodePipeline
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
@@ -115,7 +115,7 @@ Resources:
                 Provider: CodeBuild
               Configuration:
                 ProjectName:
-                  Ref: CodeBuildProject
+                  Ref: BuildProject
         - Name: Deploy
           Actions:
             - Name: Deploy
@@ -139,15 +139,50 @@ Resources:
                   - - !Ref ApplicationName
                     - 'stack'
 
+  BuildProjectRole:
+    Type: 'AWS::IAM::Role'
+    Description: IAM role for build resource
+    Properties:
+      RoleName: !Join
+        - '-'
+        - - !Ref ApplicationName
+          - build-role
+      Path: /
+      Policies:
+        - PolicyName: !Join
+            - '-'
+            - - !Ref ApplicationName
+              - build-policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+
   PipelineRole:
     Type: 'AWS::IAM::Role'
-    Description: IAM role in for pipeline resources
+    Description: IAM role for pipeline resources
     Properties:
 #      RoleName: !Sub '${AppId}-${AWS::Region}-pipeline'
       RoleName: !Join
         - '-'
         - - !Ref ApplicationName
-          - role
+          - pipeline-role
       Path: /
       Policies:
         - PolicyName: !Join
@@ -204,7 +239,6 @@ Resources:
             Effect: Allow
             Principal:
               Service:
-                - codebuild.amazonaws.com
                 - codedeploy.amazonaws.com
                 - codepipeline.amazonaws.com
                 - lambda.amazonaws.com
@@ -217,7 +251,7 @@ Resources:
 
   CloudFormationRole:
     Type: 'AWS::IAM::Role'
-    Description: IAM role in for cloudformation deploy resource
+    Description: IAM role for cloudformation deploy resource
     Properties:
       #      RoleName: !Sub '${AppId}-${AWS::Region}-pipeline'
       RoleName: !Join
