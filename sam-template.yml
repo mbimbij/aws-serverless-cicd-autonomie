@@ -9,7 +9,7 @@ Resources:
       Handler: example.HelloHandler
       Runtime: java11
       Description: Java function
-      FunctionName: my-app-autonome
+      FunctionName: aws-serverless-cicd-autonomie-function
       MemorySize: 128
       Timeout: 10
       # Function's execution role

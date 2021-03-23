@@ -37,7 +37,7 @@ Resources:
         - '-'
         - - !Ref ApplicationName
           - build-project
-      Description: A build project for my-app-autonome
+      Description: A build project for aws-serverless-cicd-autonomie
       ServiceRole: !Ref BuildProjectRole
       Artifacts:
         Type: CODEPIPELINE
