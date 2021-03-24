@@ -31,7 +31,7 @@ Au prochain article, nous implémenterons le code de la fonction `Lambda` en jav
   * [Plan de l'étape #1](#plan-etape-1)
   * [Plan de l'article](#plan-article)
 - [Implémentation Manuelle](#implementation-manuelle)
-- [Automatisation avec `CloudFormation`](#implementation-cloudformation)
+- [Automatisation avec `CloudFormation`](#automatisation-cloudformation)
 - [Références](#références)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
@@ -262,3 +262,159 @@ Pensez à copier en quelque part les policies IAM des rôles `serverless-cicd-pi
 Supprimez les ressources créées au cours de la section "Implémentation manuelle" si ça n'est pas deja fait (vous pouvez vous référer au diagramme décrivant les ressources créées, dans la section "plan de l'article", juste avant "Implémentation Manuelle".
 
 Cela afin d'éviter les conflits de nom avec celles que l'on créera via`CloudFormation`.
+
+Vous pouvez utiliser le repo github suivant pour suivre cette partie du tutorial, ou vous repositionner sur une version fonctionnelle si jamais vous vous perdez (ce qui m'arrive quand je suis de tutos ^^) :
+[https://github.com/mbimbij/aws-serverless-cicd-demo](https://github.com/mbimbij/aws-serverless-cicd-demo)
+
+Au lieu de balancer le template au complet immédiatement, soit toute une tartine indigeste de yaml et dire "voici l'implémentation, bisou", ce qui assez peu adapté et efficace pour transmettre, et surtout pour acquérir des connaissances, nous allons  procéder étape par étape, et ajouter à notre stack `CloudFormation` les ressources une à une.
+
+Comme le dit un certain proverbe: 
+"comment avaler un éléphant ?"
+"une cuillère à la fois"
+
+Que ce soit du code applicatif, du code d'infra, ou encore l'élaboration de specs, "baby steps" est une règle d'or.
+
+### <a name="cloudformation-s3"></a> Automatisation - bucket S3
+
+La "correction" est disponible sur le tag `step1.1.1_S3-bucket` du repository de support.
+
+Nous allons créer un bucket S3 ayant le nom "XXX-pipeline-bucket", où "XXX" est un préfixe défini de la manière suivante :
+
+- la région
+- l'id du compte AWS
+- le nom de l'application, donné en paramètre du template, et ayant pou valeur par défaut "serverless-cicd"
+
+Ce qui donne le template suivant: 
+
+```yaml
+Parameters:
+  ApplicationName:
+    Default: 'serverless-cicd'
+    Type: String
+    Description: Application Name
+
+
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Description: S3 bucket for pipeline artifacts
+    Properties:
+      BucketName: !Join
+        - '-'
+        - - !Ref 'AWS::Region'
+          - !Ref 'AWS::AccountId'
+          - !Ref ApplicationName
+          - bucket-pipeline
+```
+
+Ca a le mérite d'être relativement digeste et analysable, contrairement à un résultat final de plus de X centaines de lignes.
+
+Lancez la création de la stack via la commande: 
+
+`aws cloudformation update-stack --stack-name serverless-cicd-pipeline-stack --template-body file://pipeline-stack.yml --parameters ParameterKey=ApplicationName,ParameterValue=serverless-cicd --capabilities CAPABILITY_NAMED_IAM`
+
+Le nom de l'application est redondant, vous pouvez le supprimer si vous le voulez.
+
+Vous pouvez suivre l'avancée de l'éxécution du template dans la console web de `CloudFormation`:
+
+![](28-implementation-cloudformation.png)
+
+et cliquez sur l'icône en haut à droite pour rafraîchir la vue.
+
+Vous pouvez aller dans l'interface de S3 pour vérifier la création du bucket:
+
+![](29-implementation-cloudformation.png)
+
+Tout a l'air bon. 
+
+### <a name="cloudformation-github-connection"></a> Automatisation - connexion Github
+
+Ajoutez l'élément suivant en sous-élément de "Resources" du yaml:
+
+```yaml
+GithubConnection:
+  Type: AWS::CodeStarConnections::Connection
+  Properties:
+    ConnectionName: !Join
+      - '-'
+      - - !Ref ApplicationName
+        - conn
+    ProviderType: GitHub
+```
+
+Updatez la stack via la commande `aws cloudformation update-stack --stack-name serverless-cicd-pipeline-stack --template-body file://pipeline-stack.yml --capabilities CAPABILITY_NAMED_IAM`
+
+Vérifiez l'update de la stack dans la console de `CloudFormation`:
+
+![](30-implementation-cloudformation.png)
+
+Vérifiez ensuite la création de la connexion github:
+
+![](31-implementation-cloudformation.png)
+
+Notez que le status est "Pending", il faut activer la connexion manuellement, même si elle a été créée via `CloudFormation`. C'est apparemment un comportement "normal", et documenté : [https://docs.aws.amazon.com/dtconsole/latest/userguide/connections-update.html](https://docs.aws.amazon.com/dtconsole/latest/userguide/connections-update.html)
+
+Allez dans la connexion, et cliquez sur "Update pending connection" :
+
+![](32-implementation-cloudformation.png)
+
+Une popup s'ouvre, sélectionnez la "GitHub App" créée précédemment (dans la section "Implémentation Manuelle"), sinon créez-en une, c'est facile et rapide. Il ne devrait y avoir aucun piège. 
+
+Ensuite cliquez sur "Connect", fermez la popup, rechargez la page, et la connexion devrait désormais avoir un status "Available":
+
+![](34-implementation-cloudformation.png)
+
+### <a name="cloudformation-github-connection"></a> Automatisation - rôle IAM pour `CodeBuild`
+
+Nous allons maintenant introduire une ressource `CloudFormation` pour la création du rôle IAM utilisé par le projet `CodeBuild` :
+
+```yaml
+BuildProjectRole:
+  Type: 'AWS::IAM::Role'
+  Description: IAM role for build resource
+  Properties:
+    RoleName: !Join
+      - '-'
+      - - !Ref ApplicationName
+        - build-role
+    Path: /
+    Policies:
+      - PolicyName: !Join
+          - '-'
+          - - !Ref ApplicationName
+            - build-policy
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action: 
+                - s3:PutObject
+                - s3:GetObject
+                - s3:GetObjectVersion
+                - s3:GetBucketAcl
+                - s3:GetBucketLocation
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}'
+                - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/*'
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: arn:aws:logs:*:*:*
+    AssumeRolePolicyDocument:
+      Statement:
+        - Action: "sts:AssumeRole"
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+```
+
+Description rapide:
+
+- `BuildProjectRole.Properties.RoleName` : le nom du rôle
+- `BuildProjectRole.Properties.Path` : Pas sûr à 100%. Servirait à préfixer le nom du rôle, ou à le ranger dans une sorte de répertoire, pour de la gouvernance typiquement il semblerait. Plus d'information disponible ici: [https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html) 
+- `BuildProjectRole.Properties.Policies` : autorisations et interdictions attribués au rôle et aux services qui vont l'endosser
+  - accès au bucket `S3` 
+  - création de logs dans `CloudWatch`
+- `BuildProjectRole.Properties.AssumeRolePolicyDocument` : Définit quel type de "principal", soit quel type d'identité, a le droit d'assumer / endosser le rôle. Ici on définit que seul des "principaux" de type codebuild peuvent assumer le rôle.
