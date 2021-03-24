@@ -10,7 +10,6 @@ Parameters:
 
 Resources:
   S3Bucket:
-    DeletionPolicy: Delete
     Type: 'AWS::S3::Bucket'
     Description: Creating Amazon S3 bucket for AWS CodePipeline artifacts
     Properties:

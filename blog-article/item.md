@@ -30,7 +30,8 @@ Au prochain article, nous implémenterons le code de la fonction `Lambda` en jav
   * [Etapes](#etapes)
   * [Plan de l'étape #1](#plan-etape-1)
   * [Plan de l'article](#plan-article)
-- [Implémentation Manuelle](#implmentation-manuelle)
+- [Implémentation Manuelle](#implementation-manuelle)
+- [Automatisation avec `CloudFormation`](#implementation-cloudformation)
 - [Références](#références)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
@@ -85,24 +86,179 @@ Le plan de l'implémentation de cette étape #1 pouvant lui-même évoluer au co
 
 #### <a name="plan-article"></a> Plan de l'article
 
-Dans cet article, nous allons réaliser l'étape 1.1 décrite dans la section précédente: "1.1 - Implémentation des étapes "Source" + "Build" bouchonné"
+Dans cet article, nous allons réaliser l'étape 1.1 décrite dans la section précédente: "1.1 - Implémentation des étapes "Source" + "Build" bouchonné".
 
-Nous allons dans un premier temps implémenter ce début de pipeline manuellement, ensuite nous allon l'automatiser via ̀`CloudFormation`: 
+Nous allons dans un premier temps implémenter ce début de pipeline manuellement, ensuite nous allons l'automatiser via ̀`CloudFormation`
+
+Voici les ressources AWS qui seront créées:
+
+![](4-cible-etape-1.png)
 
 ### <a name="implementation-manuelle"></a> Implémentation Manuelle
 
 Nous allons procéder de la manière suivante pour l'implémentation manuelle
 
-1. création d'un bucket S3
-2. création de roles IAM 
-  + 2.1 pour codebuild
-  + 2.2 pour codepipeline
-3. création d'une pipeline CodePipeline
-  + 3.1 source: création d'une connexion github
-  + 3.2 build: création d'un projet codebuild
+1. création du bucket S3
+2. création de la pipeline `CodePipeline`
+  + 2.1 source: création de la connexion github
+  + 2.2 build: création du projet codebuild
 4. lancement de la pipeline
+3. correction du role IAM pour `CodeBuild`
 5. inspection du bucket S3 et vérification de la présence des sources
 
 ======
 
-1. création d'un bucket S3 
+0. création d'un repo github, avec un contenu arbitraire
+
+Je vous laisse faire pour cela
+
+1. création du bucket S3
+
+Créez un bucket, avec le nom "serverless-cicd-bucket"
+
+2. création de la pipeline `CodePipeline`
+
+Cliquez sur "Create Pipeline" dans le dashboard de `CodePipeline`.
+
+![](5-implementation-manuelle-pipeline-1.png)
+
+Donnez lui le nom "serverless-cicd-pipeline".
+
+Laissez coché "New Service Role, à la limite, par soucis de cohérence dans le nommage, on pourra le renommer en "serverless-cicd-pipeline-role".
+
+Laissez coché "Allow AWS CodePipeline to create a service role so it can be used with this new pipeline"
+
+![](6-implementation-manuelle-pipeline-2.png)
+
+Ensuite, dans "Advanced Settings", "Artifact Store", sélectionnez "Custom Location" et sélectionnez le bucket "serverless-cicd-bucket"
+
+![](6.1-implementation-manuelle-pipeline-2.png)
+
+Laissez "Encryption Key" à "Default AWS Managed Key". Nous modifierons cela lors de l'implémentation de l'étape #2, pour le moment elle peut garder la valeur par défaut.
+
+Cliquez sur "Suivant":
+
+"Source Provider", sélectionnez "Github (Version 2)"
+
+![](7-implementation-manuelle-pipeline-3.png)
+
+"Connection" >> "Connect to Github"
+
+![](8-implementation-manuelle-pipeline.png)
+
+Donnez un nom à la connexion, là aussi, pour rester cohérent avec le nommage "serverless-cicd-XXX", par exemple "serverless-cicd-github-connect" (la longueur du nom de la connexion doit être inférieure à 32 caractères)
+
+![](9-implementation-manuelle-pipeline.png)
+
+Sélectionnez la "GitHub App" si vous en avez deja installé une, sinon, cliquez sur "Install a new app", cela vous amène à l'écran de consentement suivant:
+
+![](10-implementation-manuelle-pipeline.png)
+
+Pour simplifier les choses dans ce tutorial, nous allons autoriser l'accès de AWS à tous les repos de notre compte et laisser "All repositories" coché.
+
+Cliquez sur "Install", cela vous ramène à l'écran précédent, mais avec un id de "GitHub App" présélectionné: 
+
+![](11-implementation-manuelle-pipeline.png)
+
+Cliquez sur "Connect".
+
+![](12-implementation-manuelle-pipeline.png)
+
+Ensuite, sélectionnez le repo et la branche sur laquelle `CodePipeline` va s'appuyer.
+Laissez toutes les autres options par défaut et cliquez sur "Suivant".
+
+Vous arriverez sur l'écran suivant:
+
+![](13-implementation-manuelle-pipeline.png)
+
+Sélectionnez `CodeBuild` en "Build Provider"
+
+![](14-implementation-manuelle-pipeline.png)
+
+à droite de "Project Name", cliquez sur "Create Project". Cela va ouvrir une popup:
+
+- nom du projet: là aussi, on va suivre notre mini convention de nommage et l'on pourra par exemple donner le nom "serverless-cicd-codbuild"
+
+![](15-implementation-manuelle-pipeline.png)
+
+Ensuite remplissez les champs suivants:
+
+- "Operating System": "Amazon Linux 2"
+- "Runtime(s)": "Standard"
+- "Image": "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+
+![](16-implementation-manuelle-pipeline.png)
+
+- "Build commands": `echo "hello world !"`
+
+On s'occupera de créer un projet `CodeBuild` approprié dans un second temps. Pour le moment, on cherche à avoir une pipeline minimale fonctionnelle, et `CodePipeline` ne permet pas de créer une pipeline avec un seul stage, qui aurait été "Source", avec la connexion GitHub. 
+
+![](17-implementation-manuelle-pipeline.png)
+
+Ensuite, "Continue to CodePipeline".
+
+Ensuite, Click on "Next".
+
+Ensuite, cliquez sur "Skip deploy stage". Confirmez.
+
+![](18-implementation-manuelle-pipeline.png)
+
+Ensuite "Create pipeline"
+
+Vous serez amené à l'écran suivant, et la pipeline sera immédiatement déclenchée:
+
+![](19-implementation-manuelle-pipeline.png)
+
+La pipeline devrait être en erreur au niveau du stage "Build"
+
+![](20-implementation-manuelle-pipeline.png)
+
+Inspectons les détails et allons regarder les logs :
+
+![](21-implementation-manuelle-pipeline.png)
+
+On constate la présence d'un `Access Denied`. AWS vient avec son lot de pièges, de surprises, parfois de contradictions, avec des messages d'erreurs pas toujours très explicites. 
+
+D'autres joyeuseries de ce genre apparaitront en cours de route ...
+
+Allons regarder les droits positionnés sur le rôle attribué à `CodeBuild` 
+
+![](22-implementation-manuelle-pipeline.png)
+
+Comme vous pouvez le voir, lors de la création du projet `CodeBuild`, des droits ont été attribués pour un bucket dont le nom est "codepipeline-eu-west-3-*", qui est le nom donné si on configure le wizard pour créer le bucket, or nous l'avons créé manuellement en amont, avec un nom différent du wizard, dommage que ce nom semble avoir été placé en dur, et qu'il ne soit pas configuré pour récupérer le nom du bucket que l'on a entré.  
+
+Corrigeons cela: remplacez `"arn:aws:s3:::codepipeline-eu-west-3-*"` par `"arn:aws:s3:::serverless-cicd-bucket/*"`
+
+![](23-implementation-manuelle-pipeline.png)
+
+Maintenant réessayons l'étape de Build, celle-ci devrait s'éxécuter avec succès:
+
+![](24-implementation-manuelle-pipeline.png)
+
+Et allons inspecter les logs de `CodeBuild`:
+
+![](25-implementation-manuelle-pipeline.png)
+
+On peut voir que les logs sont ok, ainsi que la présence de la log liée à notre commande `echo "hello world"`.
+
+Parfait parfait, allons inspecter le bucket S3 et vérifier la présence du contenu de notre repo GitHub: 
+
+![](26-implementation-manuelle-pipeline.png)
+
+Téléchargeons l'item et dézippeons-le:
+
+![](27-implementation-manuelle-pipeline.png)
+
+Il s'agit bien du contenu de notre repository. 
+
+Mission accomplie !! Nous avons crée un début de pipeline récupérant les sources et les plaçant dans le buclek S3 pour être utilisé par les autres étapes et éléments du pipeline. 
+
+Prochaine étape, automatisation de tout cela.
+
+Pensez à copier en quelque part les policies IAM des rôles `serverless-cicd-pipeline-role` et `serverless-cicd-codebuild-role`, respectivement associés à nos projets `CodePipeline` et `CodeBuild`
+
+### <a name="automatisation-cloudformation"></a> Automatisation avec `CloudFormation`
+
+Supprimez les ressources créées au cours de la section "Implémentation manuelle" si ça n'est pas deja fait (vous pouvez vous référer au diagramme décrivant les ressources créées, dans la section "plan de l'article", juste avant "Implémentation Manuelle".
+
+Cela afin d'éviter les conflits de nom avec celles que l'on créera via`CloudFormation`.
