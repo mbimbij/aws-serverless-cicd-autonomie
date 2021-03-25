@@ -14,7 +14,9 @@ Dans cette article, nous allons implémenter et faire évoluer une pipeline de C
 
 ===
 
-Cet article est le premier d'une série de 6 à 10 articles.
+Cet article est le premier d'une série.
+
+- [partie 2](https://joseph-mbimbi.fr/blog/serverless-cicd-demo-2)
 
 Nous allons implémenter le début d'une pipeline de CI/CD, uniquement les étapes "Source" et "Build" bouchonnée, sans code applicatif.
 
