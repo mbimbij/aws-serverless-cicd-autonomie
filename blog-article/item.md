@@ -30,9 +30,9 @@ Au prochain article, nous implémenterons le code de la fonction `Lambda` en jav
   * [Etapes](#etapes)
   * [Plan de l'étape #1](#plan-etape-1)
   * [Plan de l'article](#plan-article)
-- [Implémentation Manuelle](#implementation-manuelle)
-- [Automatisation avec `CloudFormation`](#automatisation-cloudformation)
-- [Références](#références)
+- [1. Implémentation Manuelle](#implementation-manuelle)
+- [2. Automatisation avec `CloudFormation`](#automatisation-cloudformation)
+- [Références](#references)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -94,7 +94,7 @@ Voici les ressources AWS qui seront créées:
 
 ![](4-cible-etape-1.png)
 
-### <a name="implementation-manuelle"></a> Implémentation Manuelle
+### <a name="implementation-manuelle"></a> 1. Implémentation Manuelle
 
 Nous allons procéder de la manière suivante pour l'implémentation manuelle
 
@@ -138,6 +138,8 @@ Laissez "Encryption Key" à "Default AWS Managed Key". Nous modifierons cela lor
 
 Cliquez sur "Suivant":
 
+### <a name="creation-connexion-github"></a> 2.1 source: création de la connexion github
+
 "Source Provider", sélectionnez "Github (Version 2)"
 
 ![](7-implementation-manuelle-pipeline-3.png)
@@ -170,6 +172,8 @@ Laissez toutes les autres options par défaut et cliquez sur "Suivant".
 Vous arriverez sur l'écran suivant:
 
 ![](13-implementation-manuelle-pipeline.png)
+
+### <a name="creation-projet-codebuild"></a> 2.2 build: création du projet codebuild
 
 Sélectionnez `CodeBuild` en "Build Provider"
 
@@ -257,7 +261,7 @@ Prochaine étape, automatisation de tout cela.
 
 Pensez à copier en quelque part les policies IAM des rôles `serverless-cicd-pipeline-role` et `serverless-cicd-codebuild-role`, respectivement associés à nos projets `CodePipeline` et `CodeBuild`
 
-### <a name="automatisation-cloudformation"></a> Automatisation avec `CloudFormation`
+### <a name="automatisation-cloudformation"></a> 2. Automatisation avec `CloudFormation`
 
 Supprimez les ressources créées au cours de la section "Implémentation manuelle" si ça n'est pas deja fait (vous pouvez vous référer au diagramme décrivant les ressources créées, dans la section "plan de l'article", juste avant "Implémentation Manuelle".
 
@@ -274,7 +278,7 @@ Comme le dit un certain proverbe:
 
 Que ce soit du code applicatif, du code d'infra, ou encore l'élaboration de specs, "baby steps" est une règle d'or.
 
-### <a name="cloudformation-s3"></a> Automatisation - bucket S3
+### <a name="cloudformation-s3"></a> 2.1 Automatisation - bucket S3
 
 La "correction" est disponible sur le tag `step1.1.1_S3-bucket` du repository de support.
 
@@ -327,7 +331,9 @@ Vous pouvez aller dans l'interface de S3 pour vérifier la création du bucket:
 
 Tout a l'air bon. 
 
-### <a name="cloudformation-github-connection"></a> Automatisation - connexion Github
+### <a name="cloudformation-github-connection"></a> 2.2 Automatisation - connexion Github
+
+La "correction" est disponible sur le tag `step1.1.2_github-connection` du repository de support.
 
 Ajoutez l'élément suivant en sous-élément de "Resources" du yaml:
 
@@ -364,7 +370,11 @@ Ensuite cliquez sur "Connect", fermez la popup, rechargez la page, et la connexi
 
 ![](34-implementation-cloudformation.png)
 
-### <a name="cloudformation-github-connection"></a> Automatisation - rôle IAM pour `CodeBuild`
+### <a name="cloudformation-role-codebuild"></a> 2.3 Automatisation - rôle IAM pour `CodeBuild`
+
+La "correction" est disponible sur le tag `step1.1.3_codebuild-role` du repository de support.
+
+Voir [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html) pour la documentation de la ressource `IAM::Role` de `CloudFormation`.
 
 Nous allons maintenant introduire une ressource `CloudFormation` pour la création du rôle IAM utilisé par le projet `CodeBuild` :
 
@@ -412,9 +422,186 @@ BuildProjectRole:
 
 Description rapide:
 
-- `BuildProjectRole.Properties.RoleName` : le nom du rôle
+- `BuildProjectRole.Properties.RoleName` : le nom du rôle. Voir [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-join.html](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-join.html) pour des détails sur la "fonction intrinsèque" `Join`.
 - `BuildProjectRole.Properties.Path` : Pas sûr à 100%. Servirait à préfixer le nom du rôle, ou à le ranger dans une sorte de répertoire, pour de la gouvernance typiquement il semblerait. Plus d'information disponible ici: [https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html) 
 - `BuildProjectRole.Properties.Policies` : autorisations et interdictions attribués au rôle et aux services qui vont l'endosser
   - accès au bucket `S3` 
   - création de logs dans `CloudWatch`
+- `BuildProjectRole.Properties.Policies.[...].Resource` : la la "fonction intrinsèque" `Sub` fait de la substitution dans une chaîne de caractères. Voir [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html#cfn-pseudo-param-partition](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html#cfn-pseudo-param-partition) pour une présentation du "pseudo-paramètre" `AWS::Partition`. Il y en a un certain nombre d'autres. 
 - `BuildProjectRole.Properties.AssumeRolePolicyDocument` : Définit quel type de "principal", soit quel type d'identité, a le droit d'assumer / endosser le rôle. Ici on définit que seul des "principaux" de type codebuild peuvent assumer le rôle.
+
+### <a name="cloudformation-role-codepipeline"></a> 2.4 Automatisation - rôle IAM pour `CodePipeline`
+
+La "correction" est disponible sur le tag `step1.1.4_codepipeline-role` du repository de support.
+
+Et maintenant, un rôle `IAM` pour `CodePipeline`.
+
+Il doit permettre de :
+
+- utiliser la connexion Github pour récupérer le code source de l'appli
+- utiliser le bucket S3 pour pousser le code source de l'appli dedans
+- lancer des builds CodeBuild
+
+Et doit être assumé par codepipeline, bien évidemment
+
+Aussi on a recopié des morceaux de permissions IAM d'une pipeline créée par le wizard :)
+
+```yaml
+PipelineRole:
+  Type: 'AWS::IAM::Role'
+  Description: IAM role for !Ref ApplicationName pipeline resource
+  Properties:
+    RoleName: !Join
+      - '-'
+      - - !Ref ApplicationName
+        - pipeline-role
+    Path: /
+    Policies:
+      - PolicyName: !Join
+          - '-'
+          - - !Ref ApplicationName
+            - pipeline-policy
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action:
+                - codestar-connections:UseConnection
+              Resource: !Ref GithubConnection
+            - Effect: Allow
+              Action:
+                - codebuild:BatchGetBuilds
+                - codebuild:StartBuild
+                - codebuild:BatchGetBuildBatches
+                - codebuild:StartBuildBatch
+              Resource: !GetAtt
+                - BuildProject
+                - Arn
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+                - s3:GetObjectVersion
+                - s3:GetBucketAcl
+                - s3:PutObjectAcl
+                - s3:GetBucketLocation
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}'
+                - !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/*'
+```
+
+### <a name="cloudformation-codebuild"></a> 2.5 Automatisation - projet `CodeBuild`
+
+La "correction" est disponible sur le tag `step1.1.5_codebuild-project` du repository de support.
+
+Voir [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codebuild-project.html](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codebuild-project.html) pour la documentation de la ressource `CodeBuild` de `CloudFormation`. 
+
+```yaml
+BuildProject:
+  Type: AWS::CodeBuild::Project
+  Properties:
+    Name: !Join
+      - '-'
+      - - !Ref ApplicationName
+        - build-project
+    Description: A build project for !Ref ApplicationName
+    ServiceRole: !Ref BuildProjectRole
+    Artifacts:
+      Type: CODEPIPELINE
+      Packaging: ZIP
+    Environment:
+      Type: LINUX_CONTAINER
+      ComputeType: BUILD_GENERAL1_SMALL
+      Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+    Source:
+      Type: CODEPIPELINE
+      BuildSpec: |
+        version: 0.2
+        phases:
+          build:
+            commands:
+              - echo "hello world"
+```
+
+On définit dans les properties typiqueent ce que l'on a fait manuellement.
+
+Description rapide des éléments nouveaux:
+
+- `BuildProject.Properties.Source.BuildSpec` : D'ordinaire, la définition du build se trouve dans un fichier `buildspec.yml`, à la racine du repo github du code traité par la pipeline, mais on peut aussi l'inliner dans la définition `CloudFormation` de la pipeline. Pour reproduire le cas simple fait manuellement, ça convient très bien. Un peu plus tard nous introduirons un fichier `buildspec.yml`.
+
+### <a name="cloudformation-codepipeline"></a> 2.6 Automatisation - projet `CodePipeline`
+
+La "correction" est disponible sur le tag `step1.1.6_codepipeline-project` du repository de support.
+
+Dans cette étape, nous allons rajouter une ressource `CloudFormation` pour le projet `CodePipeline`, ainsi qu'un paramètre pour le repo github.
+
+Voir [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codepipeline-pipeline.html](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codepipeline-pipeline.html) pour la documentation de la ressource `CodePipeline` de `CloudFormation`.
+
+Les nouveaux éléments sont les suivants:
+
+```yaml
+Parameters:
+  GithubRepo:
+    Default: 'mbimbij/aws-serverless-cicd-autonomie'
+    Type: String
+    Description: Github source code repository
+  GithubRepoBranch:
+    Default: 'main'
+    Type: String
+    Description: Github source code branch
+
+Resources:
+  Pipeline:
+    Description: Creating a deployment pipeline for !Ref ApplicationName project in AWS CodePipeline
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      RoleArn: !GetAtt
+        - PipelineRole
+        - Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3Bucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeStarSourceConnection
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ConnectionArn: !Ref GithubConnection
+                FullRepositoryId: !Ref GithubRepo
+                BranchName: !Ref GithubRepoBranch
+                OutputArtifactFormat: "CODE_ZIP"
+        - Name: Build
+          Actions:
+            - Name: Build
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName:
+                  Ref: BuildProject
+```
+
+Après update de la stack (ne pas oublier d'activer la connexion github), on a un début de pipeline pleinement fonctionnel
+
+![](35-implementation-cloudformation.png)
+
+On est prêts à passer à la partie #2: code applicatif et intégration à la pipeline
+
+###  <a name="references"></a> Références
+
+- Repo original utilisé par l'auteur pour constituer la pipeline [https://github.com/mbimbij/aws-serverless-cicd-autonomie](https://github.com/mbimbij/aws-serverless-cicd-autonomie)
+- Repo de support pour l'implémentation de la pipeline via `CloudFormation` [https://github.com/mbimbij/aws-serverless-cicd-demo](https://github.com/mbimbij/aws-serverless-cicd-demo)
+- "archi de référence" pour une pipeline cicd serverless "simple": [https://github.com/aws-samples/aws-lambda-sample-applications/tree/master/CICD-toolchain-for-serverless-applications](https://github.com/aws-samples/aws-lambda-sample-applications/tree/master/CICD-toolchain-for-serverless-applications)
+- archi de référence pour une pipeline cicd cross-account: [https://github.com/awslabs/aws-refarch-cross-account-pipeline](https://github.com/awslabs/aws-refarch-cross-account-pipeline)
