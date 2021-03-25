@@ -247,7 +247,7 @@ You may need to restart the pipeline if it started before you activated the gith
 
 1. Add and test alarms and rollbacks
 2. Make IAM policies less permissive
-3.  Déploiement "cross-account". On pourra pour cela s'appuyer sur
+3. Cross-Account deployment. For that task, we may rely on [https://github.com/awslabs/aws-refarch-cross-account-pipeline](https://github.com/awslabs/aws-refarch-cross-account-pipeline)
 
 ## Links
 
