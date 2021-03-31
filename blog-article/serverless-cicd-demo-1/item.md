@@ -1,6 +1,6 @@
 
 ---
-title: Implémentation d'une pipeline CI/CD pour des application AWS Serverless - partie1
+title: Implémentation d'une pipeline CI/CD pour des application AWS Serverless - partie 1
 date: 12:30 03/23/2021
 author: Joseph M'Bimbi-Bene
 hero_classes: 'text-light overlay-dark-gradient'
@@ -17,6 +17,7 @@ Dans cette article, nous allons implémenter et faire évoluer une pipeline de C
 Cet article est le premier d'une série.
 
 - [partie 2](https://joseph-mbimbi.fr/blog/serverless-cicd-demo-2)
+- [partie 3](https://joseph-mbimbi.fr/blog/serverless-cicd-demo-3)
 
 Nous allons implémenter le début d'une pipeline de CI/CD, uniquement les étapes "Source" et "Build" bouchonnée, sans code applicatif.
 

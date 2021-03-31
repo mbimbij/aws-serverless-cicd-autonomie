@@ -245,10 +245,7 @@ Resources:
     Type: 'AWS::IAM::Role'
     Description: IAM role for cloudformation deploy resource
     Properties:
-      RoleName: !Join
-        - '-'
-        - - !Ref ApplicationName
-          - cloudformation-role
+      RoleName: !Join ['-',[!Ref ApplicationName,'cloudformation-role']]
       Path: /
       AssumeRolePolicyDocument:
         Statement:

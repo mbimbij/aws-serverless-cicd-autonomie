@@ -1,6 +1,6 @@
 
 ---
-title: Implémentation d'une pipeline CI/CD pour des application AWS Serverless - partie2
+title: Implémentation d'une pipeline CI/CD pour des application AWS Serverless - partie 2
 date: 12:30 03/25/2021
 author: Joseph M'Bimbi-Bene
 hero_classes: 'text-light overlay-dark-gradient'
@@ -17,6 +17,7 @@ Dans cette article, nous allons créer une fonction lambda en java, et l'intégr
 Voir aussi :
 
 - [partie 1](https://joseph-mbimbi.fr/blog/serverless-cicd-demo-1)
+- [partie 3](https://joseph-mbimbi.fr/blog/serverless-cicd-demo-3)
 
 ### Sommaire
 
@@ -250,7 +251,7 @@ Nous avons:
 
 Dans le prochain article, au choix nous allons:
 
-- déployer la fonction dans un compte dédié au test, lancer les tests dedans, puis déployer dans un compte dédié à la prod ensuite
+- déployer la fonction dans un compte dédié au test et lancer les tests dedans, puis déployer dans un compte dédié à la prod ensuite
 - créer une alarme se déclenchant en cas d'erreur lors de l'appel de la fonction, modifier le mode de déploiement en canary et rollback automatiquement en cas d'erreur
 
 ###  <a name="references"></a> Références
